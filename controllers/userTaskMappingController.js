@@ -5,7 +5,7 @@ const {
     updateTask,
     findTaskByID,
     validateDataifDuplicate,
-    getAllTaskByUserIDandTaskStatus
+    getAllTaskByUserIDandTaskStatus,
 } = require("../service/userTaskMapping");
 
 const {
@@ -36,7 +36,6 @@ async function createUserTask(req, res) {
             });
         }
 
-      
         //let verify the tasMaster if it is exist or not
         let verifyTaskMaster = await validateTaskMaster(req.body.status);
         if (verifyTaskMaster == null || verifyTaskMaster == undefined) {
@@ -56,14 +55,14 @@ async function createUserTask(req, res) {
             modifiedBy: req.user.userID,
         };
 
-          //let check the task if it is exist than do not create the task
-          let checkTask = await validateDataifDuplicate(userTask);
-          if(checkTask != null){
-                return res.status(400).json({
-                    statusCode: 400,
-                    message: "Task already exist",
-                });
-          }
+        //let check the task if it is exist than do not create the task
+        let checkTask = await validateDataifDuplicate(userTask);
+        if (checkTask != null) {
+            return res.status(400).json({
+                statusCode: 400,
+                message: "Task already exist",
+            });
+        }
 
         //let save the user task
         let saveUserTask = await createUserTaskMapping(userTask);
@@ -198,7 +197,11 @@ async function updateUserTask(req, res) {
         }
 
         //let update the task by taskID and userID
-        let updateTaskRequest = await updateTask(req.body.taskID, req.user.userID, req.body);
+        let updateTaskRequest = await updateTask(
+            req.body.taskID,
+            req.user.userID,
+            req.body
+        );
 
         return res.status(200).json({
             statusCode: 200,
@@ -229,8 +232,32 @@ async function getAllTaskByStatus(req, res) {
             });
         }
 
+        if (req.body.status == null || req.body.status == undefined) {
+            //let get all the task by userID
+            let getAllTask = await getAllTaskByUserID(req.user.userID);
+            console.log("getAllTask====>>>", getAllTask);
+            if (getAllTask == null) {
+                return res.status(401).json({
+                    statusCode: 401,
+                    message: "Task not found",
+                    count: 0,
+                    data: [],
+                });
+            }
+
+            return res.status(200).json({
+                statusCode: 200,
+                message: "Task fetched successfully",
+                data: getAllTask,
+                count: getAllTask.length,
+            });
+        }
+
         //let get all the task by userID
-        let getAllTask = await getAllTaskByUserIDandTaskStatus(req.user.userID,req.body.status);
+        let getAllTask = await getAllTaskByUserIDandTaskStatus(
+            req.user.userID,
+            req.body.status
+        );
         console.log("getAllTask====>>>", getAllTask);
         if (getAllTask == null) {
             return res.status(401).json({
@@ -247,8 +274,6 @@ async function getAllTaskByStatus(req, res) {
             data: getAllTask,
             count: getAllTask.length,
         });
-
-
     } catch (error) {
         console.log("Error in saving the user task====>>>", error);
         return res.status(500).json({
@@ -263,6 +288,5 @@ module.exports = {
     getAllUserTask,
     deleteUserTask,
     updateUserTask,
-    getAllTaskByStatus
-
+    getAllTaskByStatus,
 };
